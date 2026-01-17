@@ -147,7 +147,13 @@ const wildcardResults: Record<string, string> = {
 export default function NFLPickem() {
   const [activeTab, setActiveTab] = useState('leaderboard')
   const [players] = useState(initialPlayers)
-  const [picks, setPicks] = useState(initialPicks)
+  const [picks, setPicks] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('nfl-pickem-picks')
+      return saved ? JSON.parse(saved) : initialPicks
+    }
+    return initialPicks
+  })
   const [liveGames, setLiveGames] = useState<GameData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
@@ -156,6 +162,13 @@ export default function NFLPickem() {
   const [isAdminAuth, setIsAdminAuth] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const [showPickModal, setShowPickModal] = useState(false)
+  
+  // Save picks to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nfl-pickem-picks', JSON.stringify(picks))
+    }
+  }, [picks])
   
   // Player login state
   const [loggedInPlayer, setLoggedInPlayer] = useState<string | null>(null)
@@ -206,8 +219,21 @@ export default function NFLPickem() {
           winner = homeScore > awayScore ? home.team.shortDisplayName : away.team.shortDisplayName
         }
         
+        // Detect round from event name
+        let round: RoundKey = 'divisional'
+        const eventName = event.name.toLowerCase()
+        if (eventName.includes('wild') || eventName.includes('wildcard')) {
+          round = 'wildcard'
+        } else if (eventName.includes('division')) {
+          round = 'divisional'
+        } else if (eventName.includes('conference') || eventName.includes('championship')) {
+          round = 'conference'
+        } else if (eventName.includes('super bowl')) {
+          round = 'superbowl'
+        }
+        
         return {
-          id: `div-${index + 1}`,
+          id: `${round.substring(0,3)}-${index + 1}`,
           homeTeam: home.team.shortDisplayName,
           awayTeam: away.team.shortDisplayName,
           homeScore: parseInt(home.score || '0'),
@@ -219,7 +245,7 @@ export default function NFLPickem() {
           kickoff: new Date(event.date),
           winner,
           conference: homeInfo.conference,
-          round: 'divisional' as RoundKey
+          round
         }
       }) || []
       
@@ -771,8 +797,11 @@ export default function NFLPickem() {
                           const hidden = shouldHidePick(game.id, player, selectedPlayer)
                           const isCorrect = game.status === 'final' && pick === game.winner
                           const isIncorrect = game.status === 'final' && pick && pick !== game.winner
+                          const isLocked = new Date() >= game.kickoff
+                          const isOwnPick = player === loggedInPlayer
                           
-                          if (isAdminAuth) {
+                          // Admin can edit anyone, or user can edit their own unlocked picks
+                          if ((isAdminAuth || (isOwnPick && !isLocked))) {
                             return (
                               <td 
                                 key={game.id} 
@@ -794,8 +823,8 @@ export default function NFLPickem() {
                                   }}
                                 >
                                   <option value="">-</option>
-                                  <option value={game.awayTeam}>{game.awayTeam}</option>
-                                  <option value={game.homeTeam}>{game.homeTeam}</option>
+                                  <option value={game.awayTeam}>{game.awayTeam} (+{ROUNDS.divisional.basePoints + game.awaySeed})</option>
+                                  <option value={game.homeTeam}>{game.homeTeam} (+{ROUNDS.divisional.basePoints + game.homeSeed})</option>
                                 </select>
                               </td>
                             )
@@ -913,15 +942,91 @@ export default function NFLPickem() {
             <span style={{ background: 'var(--accent-gold)', color: 'var(--bg-dark)', padding: '0.3rem 0.8rem', borderRadius: '4px', fontSize: '0.8rem' }}>4 pts + seed</span>
           </div>
           
-          <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
-              Matchups will be determined after Divisional Round concludes
-            </p>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '1rem' }}>
-              AFC Championship: TBD vs TBD<br />
-              NFC Championship: TBD vs TBD
-            </p>
-          </div>
+          {liveGames.filter(g => g.round === 'conference').length === 0 ? (
+            <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
+                Matchups will be determined after Divisional Round concludes
+              </p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '1rem' }}>
+                AFC Championship: TBD vs TBD<br />
+                NFC Championship: TBD vs TBD
+              </p>
+            </div>
+          ) : (
+            <div className="card">
+              <div className="picks-table-container">
+                <table className="picks-table">
+                  <thead>
+                    <tr>
+                      <th>Player</th>
+                      {liveGames.filter(g => g.round === 'conference').map(game => (
+                        <th key={game.id}>{game.awayTeam.substring(0,3).toUpperCase()}@{game.homeTeam.substring(0,3).toUpperCase()}</th>
+                      ))}
+                      <th>Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {players.map(player => {
+                      const playerPicks = picks[player] || {}
+                      const { breakdown } = calculatePoints(player)
+                      return (
+                        <tr key={player}>
+                          <td>{player}</td>
+                          {liveGames.filter(g => g.round === 'conference').map(game => {
+                            const pick = playerPicks[game.id]
+                            const hidden = shouldHidePick(game.id, player, selectedPlayer)
+                            const isCorrect = game.status === 'final' && pick === game.winner
+                            const isIncorrect = game.status === 'final' && pick && pick !== game.winner
+                            const isLocked = new Date() >= game.kickoff
+                            const isOwnPick = player === loggedInPlayer
+                            
+                            if ((isAdminAuth || (isOwnPick && !isLocked))) {
+                              return (
+                                <td 
+                                  key={game.id} 
+                                  className={`pick-cell ${isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}
+                                >
+                                  <select
+                                    value={pick || ''}
+                                    onChange={(e) => setPicks(prev => ({
+                                      ...prev,
+                                      [player]: { ...prev[player], [game.id]: e.target.value }
+                                    }))}
+                                    style={{
+                                      background: 'var(--bg-dark)',
+                                      color: 'var(--text-primary)',
+                                      border: '1px solid var(--border-color)',
+                                      borderRadius: '4px',
+                                      padding: '0.25rem',
+                                      fontSize: '0.85rem'
+                                    }}
+                                  >
+                                    <option value="">-</option>
+                                    <option value={game.awayTeam}>{game.awayTeam} (+{ROUNDS.conference.basePoints + game.awaySeed})</option>
+                                    <option value={game.homeTeam}>{game.homeTeam} (+{ROUNDS.conference.basePoints + game.homeSeed})</option>
+                                  </select>
+                                </td>
+                              )
+                            }
+                            
+                            return (
+                              <td 
+                                key={game.id} 
+                                className={`pick-cell ${hidden ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}
+                              >
+                                {hidden ? '🔒' : pick || '-'}
+                              </td>
+                            )
+                          })}
+                          <td className="points">{breakdown.conference}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -933,14 +1038,90 @@ export default function NFLPickem() {
             <span style={{ background: 'var(--accent-gold)', color: 'var(--bg-dark)', padding: '0.3rem 0.8rem', borderRadius: '4px', fontSize: '0.8rem' }}>8 pts + seed</span>
           </div>
           
-          <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
-              Matchup will be determined after Conference Championships conclude
-            </p>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '1rem' }}>
-              AFC Champion vs NFC Champion
-            </p>
-          </div>
+          {liveGames.filter(g => g.round === 'superbowl').length === 0 ? (
+            <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
+                Matchup will be determined after Conference Championships conclude
+              </p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '1rem' }}>
+                AFC Champion vs NFC Champion
+              </p>
+            </div>
+          ) : (
+            <div className="card">
+              <div className="picks-table-container">
+                <table className="picks-table">
+                  <thead>
+                    <tr>
+                      <th>Player</th>
+                      {liveGames.filter(g => g.round === 'superbowl').map(game => (
+                        <th key={game.id}>SUPER BOWL</th>
+                      ))}
+                      <th>Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {players.map(player => {
+                      const playerPicks = picks[player] || {}
+                      const { breakdown } = calculatePoints(player)
+                      return (
+                        <tr key={player}>
+                          <td>{player}</td>
+                          {liveGames.filter(g => g.round === 'superbowl').map(game => {
+                            const pick = playerPicks[game.id]
+                            const hidden = shouldHidePick(game.id, player, selectedPlayer)
+                            const isCorrect = game.status === 'final' && pick === game.winner
+                            const isIncorrect = game.status === 'final' && pick && pick !== game.winner
+                            const isLocked = new Date() >= game.kickoff
+                            const isOwnPick = player === loggedInPlayer
+                            
+                            if ((isAdminAuth || (isOwnPick && !isLocked))) {
+                              return (
+                                <td 
+                                  key={game.id} 
+                                  className={`pick-cell ${isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}
+                                >
+                                  <select
+                                    value={pick || ''}
+                                    onChange={(e) => setPicks(prev => ({
+                                      ...prev,
+                                      [player]: { ...prev[player], [game.id]: e.target.value }
+                                    }))}
+                                    style={{
+                                      background: 'var(--bg-dark)',
+                                      color: 'var(--text-primary)',
+                                      border: '1px solid var(--border-color)',
+                                      borderRadius: '4px',
+                                      padding: '0.25rem',
+                                      fontSize: '0.85rem'
+                                    }}
+                                  >
+                                    <option value="">-</option>
+                                    <option value={game.awayTeam}>{game.awayTeam} (+{ROUNDS.superbowl.basePoints + game.awaySeed})</option>
+                                    <option value={game.homeTeam}>{game.homeTeam} (+{ROUNDS.superbowl.basePoints + game.homeSeed})</option>
+                                  </select>
+                                </td>
+                              )
+                            }
+                            
+                            return (
+                              <td 
+                                key={game.id} 
+                                className={`pick-cell ${hidden ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}
+                              >
+                                {hidden ? '🔒' : pick || '-'}
+                              </td>
+                            )
+                          })}
+                          <td className="points">{breakdown.superbowl}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
