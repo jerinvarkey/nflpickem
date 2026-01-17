@@ -173,17 +173,18 @@ export default function NFLPickem() {
       const { data, error } = await supabase.from('picks').select('*')
       if (error) throw error
       
-      if (data) {
-        const picksMap: Record<string, Record<string, string>> = { ...initialPicks } // Start with initialPicks
+      // Start with initialPicks as the base
+      const picksMap: Record<string, Record<string, string>> = JSON.parse(JSON.stringify(initialPicks))
+      
+      // Merge in Supabase data (overrides initialPicks where it exists)
+      if (data && data.length > 0) {
         data.forEach((pick: any) => {
           if (!picksMap[pick.player]) picksMap[pick.player] = {}
-          picksMap[pick.player][pick.game_id] = pick.pick // Supabase overrides initialPicks
+          picksMap[pick.player][pick.game_id] = pick.pick
         })
-        setPicks(picksMap)
-      } else {
-        // No data in Supabase, use initialPicks
-        setPicks(initialPicks)
       }
+      
+      setPicks(picksMap)
     } catch (error) {
       console.error('Error loading picks:', error)
       setPicks(initialPicks) // Fallback to initialPicks on error
