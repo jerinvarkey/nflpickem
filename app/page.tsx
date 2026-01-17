@@ -174,15 +174,19 @@ export default function NFLPickem() {
       if (error) throw error
       
       if (data) {
-        const picksMap: Record<string, Record<string, string>> = {}
+        const picksMap: Record<string, Record<string, string>> = { ...initialPicks } // Start with initialPicks
         data.forEach((pick: any) => {
           if (!picksMap[pick.player]) picksMap[pick.player] = {}
-          picksMap[pick.player][pick.game_id] = pick.pick
+          picksMap[pick.player][pick.game_id] = pick.pick // Supabase overrides initialPicks
         })
         setPicks(picksMap)
+      } else {
+        // No data in Supabase, use initialPicks
+        setPicks(initialPicks)
       }
     } catch (error) {
       console.error('Error loading picks:', error)
+      setPicks(initialPicks) // Fallback to initialPicks on error
     }
   }
   
@@ -896,7 +900,7 @@ export default function NFLPickem() {
       {activeTab === 'picks' && (
         <div className="fade-in">
           <div className="card-header" style={{ background: 'transparent', border: 'none', padding: '0 0 1rem 0' }}>
-            <h2>📝 Enter Your Picks</h2>
+            <h2>📝 My Picks</h2>
           </div>
           
           {!loggedInPlayer ? (
@@ -909,69 +913,164 @@ export default function NFLPickem() {
               </button>
             </div>
           ) : (
-            <div className="card">
-              <div className="card-header">
-                <h3>Divisional Round Picks for {loggedInPlayer}</h3>
-              </div>
-              <div style={{ padding: '1.25rem' }}>
-                <div className="pick-entry">
-                  {liveGames.map(game => {
-                    const isLocked = new Date() >= game.kickoff
-                    const currentPick = picks[loggedInPlayer]?.[game.id]
+            <div>
+              {/* Wild Card Round - Completed */}
+              <div className="card" style={{ marginBottom: '1.5rem' }}>
+                <div className="card-header">
+                  <h3>🏈 Wild Card Round (Complete)</h3>
+                </div>
+                <div style={{ padding: '1.25rem' }}>
+                  {['wc-1', 'wc-2', 'wc-3', 'wc-4', 'wc-5', 'wc-6'].map((gameId, idx) => {
+                    const gameMatchups = [
+                      { away: 'Chargers', awaySeed: 7, home: 'Patriots', homeSeed: 2 },
+                      { away: 'Bills', awaySeed: 6, home: 'Jaguars', homeSeed: 3 },
+                      { away: 'Texans', awaySeed: 5, home: 'Steelers', homeSeed: 4 },
+                      { away: 'Packers', awaySeed: 7, home: 'Bears', homeSeed: 2 },
+                      { away: '49ers', awaySeed: 6, home: 'Eagles', homeSeed: 3 },
+                      { away: 'Rams', awaySeed: 5, home: 'Panthers', homeSeed: 4 }
+                    ][idx]
+                    const pick = picks[loggedInPlayer]?.[gameId]
+                    const result = wildcardResults[gameId]
+                    const isCorrect = pick === result
+                    const points = isCorrect ? ROUNDS.wildcard.basePoints + (pick === gameMatchups.away ? gameMatchups.awaySeed : gameMatchups.homeSeed) : 0
                     
                     return (
-                      <div key={game.id} className="pick-matchup">
-                        <div 
-                          className={`pick-option ${currentPick === game.awayTeam ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
-                          onClick={async () => {
-                            if (isLocked || !loggedInPlayer) return
-                            setPicks((prev: Record<string, Record<string, string>>) => ({
-                              ...prev,
-                              [loggedInPlayer]: {
-                                ...prev[loggedInPlayer],
-                                [game.id]: game.awayTeam
-                              }
-                            }))
-                            await savePickToSupabase(loggedInPlayer, game.id, game.awayTeam)
-                          }}
-                        >
-                          <span className="seed-badge">{game.awaySeed}</span>
-                          <span className="team-name">{game.awayTeam}</span>
-                          <span className="potential-pts">+{ROUNDS.divisional.basePoints + game.awaySeed} pts</span>
-                        </div>
-                        
-                        <div style={{ textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            {isLocked ? '🔒 LOCKED' : game.statusDetail}
+                      <div key={gameId} style={{ 
+                        padding: '1rem', 
+                        marginBottom: '0.75rem', 
+                        background: 'var(--bg-card-alt)', 
+                        borderRadius: '8px',
+                        border: `2px solid ${isCorrect ? 'var(--accent-green)' : 'var(--accent-red)'}`
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                            {gameMatchups.away} @ {gameMatchups.home}
+                          </span>
+                          <span style={{ 
+                            fontSize: '0.9rem', 
+                            fontWeight: 'bold',
+                            color: isCorrect ? 'var(--accent-green)' : 'var(--accent-red)'
+                          }}>
+                            {isCorrect ? `✓ ${points} pts` : '✗ 0 pts'}
                           </span>
                         </div>
-                        
-                        <div 
-                          className={`pick-option ${currentPick === game.homeTeam ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
-                          onClick={async () => {
-                            if (isLocked || !loggedInPlayer) return
-                            setPicks((prev: Record<string, Record<string, string>>) => ({
-                              ...prev,
-                              [loggedInPlayer]: {
-                                ...prev[loggedInPlayer],
-                                [game.id]: game.homeTeam
-                              }
-                            }))
-                            await savePickToSupabase(loggedInPlayer, game.id, game.homeTeam)
-                          }}
-                        >
-                          <span className="seed-badge">{game.homeSeed}</span>
-                          <span className="team-name">{game.homeTeam}</span>
-                          <span className="potential-pts">+{ROUNDS.divisional.basePoints + game.homeSeed} pts</span>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                          Your pick: <strong style={{ color: 'var(--text-primary)' }}>{pick || 'None'}</strong> • 
+                          Winner: <strong style={{ color: 'var(--accent-green)' }}> {result}</strong>
                         </div>
                       </div>
                     )
                   })}
                 </div>
-                
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '1.5rem' }}>
-                  ⚠️ Picks lock at kickoff and are hidden from others until then
-                </p>
+              </div>
+
+              {/* Divisional Round - Active */}
+              <div className="card" style={{ marginBottom: '1.5rem' }}>
+                <div className="card-header">
+                  <h3>🏈 Divisional Round {liveGames.filter(g => g.round === 'divisional' && g.status === 'final').length > 0 ? '(In Progress)' : '(Upcoming)'}</h3>
+                </div>
+                <div style={{ padding: '1.25rem' }}>
+                  <div className="pick-entry">
+                    {liveGames.filter(g => g.round === 'divisional').map(game => {
+                      const isLocked = new Date() >= game.kickoff
+                      const currentPick = picks[loggedInPlayer]?.[game.id]
+                      const isCorrect = game.status === 'final' && currentPick === game.winner
+                      const isIncorrect = game.status === 'final' && currentPick && currentPick !== game.winner
+                      
+                      return (
+                        <div key={game.id} className="pick-matchup" style={{
+                          border: game.status === 'final' ? `2px solid ${isCorrect ? 'var(--accent-green)' : isIncorrect ? 'var(--accent-red)' : 'var(--border-color)'}` : '2px solid var(--border-color)',
+                          borderRadius: '8px',
+                          padding: '1rem',
+                          marginBottom: '1rem'
+                        }}>
+                          {game.status === 'final' && (
+                            <div style={{ textAlign: 'center', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold', color: isCorrect ? 'var(--accent-green)' : 'var(--accent-red)' }}>
+                              {isCorrect ? `✓ +${ROUNDS.divisional.basePoints + (currentPick === game.awayTeam ? game.awaySeed : game.homeSeed)} pts` : isIncorrect ? '✗ 0 pts' : ''}
+                            </div>
+                          )}
+                          <div 
+                            className={`pick-option ${currentPick === game.awayTeam ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
+                            onClick={async () => {
+                              if (isLocked || !loggedInPlayer) return
+                              setPicks((prev: Record<string, Record<string, string>>) => ({
+                                ...prev,
+                                [loggedInPlayer]: {
+                                  ...prev[loggedInPlayer],
+                                  [game.id]: game.awayTeam
+                                }
+                              }))
+                              await savePickToSupabase(loggedInPlayer, game.id, game.awayTeam)
+                            }}
+                          >
+                            <span className="seed-badge">{game.awaySeed}</span>
+                            <span className="team-name">{game.awayTeam}</span>
+                            <span className="potential-pts">+{ROUNDS.divisional.basePoints + game.awaySeed} pts</span>
+                          </div>
+                          
+                          <div style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              {game.status === 'final' ? `Final: ${game.awayScore}-${game.homeScore}` : isLocked ? '🔒 LOCKED' : game.statusDetail}
+                            </span>
+                          </div>
+                          
+                          <div 
+                            className={`pick-option ${currentPick === game.homeTeam ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
+                            onClick={async () => {
+                              if (isLocked || !loggedInPlayer) return
+                              setPicks((prev: Record<string, Record<string, string>>) => ({
+                                ...prev,
+                                [loggedInPlayer]: {
+                                  ...prev[loggedInPlayer],
+                                  [game.id]: game.homeTeam
+                                }
+                              }))
+                              await savePickToSupabase(loggedInPlayer, game.id, game.homeTeam)
+                            }}
+                          >
+                            <span className="seed-badge">{game.homeSeed}</span>
+                            <span className="team-name">{game.homeTeam}</span>
+                            <span className="potential-pts">+{ROUNDS.divisional.basePoints + game.homeSeed} pts</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  
+                  {liveGames.filter(g => g.round === 'divisional' && new Date() < g.kickoff).length > 0 && (
+                    <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '1.5rem' }}>
+                      ⚠️ Picks lock at kickoff
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Conference Championship - Future */}
+              <div className="card" style={{ marginBottom: '1.5rem' }}>
+                <div className="card-header">
+                  <h3>🏈 Conference Championship</h3>
+                </div>
+                <div style={{ padding: '2rem', textAlign: 'center' }}>
+                  <p style={{ color: 'var(--text-secondary)' }}>
+                    {liveGames.filter(g => g.round === 'conference').length === 0 
+                      ? 'Matchups will be available after Divisional Round'
+                      : 'Available for picks'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Super Bowl - Future */}
+              <div className="card">
+                <div className="card-header">
+                  <h3>🏈 Super Bowl</h3>
+                </div>
+                <div style={{ padding: '2rem', textAlign: 'center' }}>
+                  <p style={{ color: 'var(--text-secondary)' }}>
+                    {liveGames.filter(g => g.round === 'superbowl').length === 0 
+                      ? 'Matchup will be available after Conference Championships'
+                      : 'Available for picks'}
+                  </p>
+                </div>
               </div>
             </div>
           )}
