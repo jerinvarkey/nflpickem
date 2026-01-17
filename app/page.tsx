@@ -358,7 +358,6 @@ export default function NFLPickem() {
     setPasswordError('')
     alert('Password changed successfully!')
   }
-  }
 
   return (
     <div className="app-container">
