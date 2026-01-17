@@ -722,7 +722,7 @@ export default function NFLPickem() {
                               <td key={gameId} className={`pick-cell ${isCorrect ? 'correct' : 'incorrect'}`}>
                                 <select
                                   value={pick || ''}
-                                  onChange={(e) => setPicks(prev => ({
+                                  onChange={(e) => setPicks((prev: Record<string, Record<string, string>>) => ({
                                     ...prev,
                                     [player]: { ...prev[player], [gameId]: e.target.value }
                                   }))}
@@ -809,7 +809,7 @@ export default function NFLPickem() {
                               >
                                 <select
                                   value={pick || ''}
-                                  onChange={(e) => setPicks(prev => ({
+                                  onChange={(e) => setPicks((prev: Record<string, Record<string, string>>) => ({
                                     ...prev,
                                     [player]: { ...prev[player], [game.id]: e.target.value }
                                   }))}
@@ -883,7 +883,7 @@ export default function NFLPickem() {
                           className={`pick-option ${currentPick === game.awayTeam ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
                           onClick={() => {
                             if (isLocked || !loggedInPlayer) return
-                            setPicks(prev => ({
+                            setPicks((prev: Record<string, Record<string, string>>) => ({
                               ...prev,
                               [loggedInPlayer]: {
                                 ...prev[loggedInPlayer],
@@ -907,7 +907,7 @@ export default function NFLPickem() {
                           className={`pick-option ${currentPick === game.homeTeam ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
                           onClick={() => {
                             if (isLocked || !loggedInPlayer) return
-                            setPicks(prev => ({
+                            setPicks((prev: Record<string, Record<string, string>>) => ({
                               ...prev,
                               [loggedInPlayer]: {
                                 ...prev[loggedInPlayer],
@@ -988,7 +988,7 @@ export default function NFLPickem() {
                                 >
                                   <select
                                     value={pick || ''}
-                                    onChange={(e) => setPicks(prev => ({
+                                    onChange={(e) => setPicks((prev: Record<string, Record<string, string>>) => ({
                                       ...prev,
                                       [player]: { ...prev[player], [game.id]: e.target.value }
                                     }))}
@@ -1083,7 +1083,7 @@ export default function NFLPickem() {
                                 >
                                   <select
                                     value={pick || ''}
-                                    onChange={(e) => setPicks(prev => ({
+                                    onChange={(e) => setPicks((prev: Record<string, Record<string, string>>) => ({
                                       ...prev,
                                       [player]: { ...prev[player], [game.id]: e.target.value }
                                     }))}
