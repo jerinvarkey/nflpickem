@@ -1,6 +1,12 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 // Simple player passwords (in production, use proper auth)
 // Each player logs in with their name + password
@@ -147,13 +153,7 @@ const wildcardResults: Record<string, string> = {
 export default function NFLPickem() {
   const [activeTab, setActiveTab] = useState('leaderboard')
   const [players] = useState(initialPlayers)
-  const [picks, setPicks] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('nfl-pickem-picks')
-      return saved ? JSON.parse(saved) : initialPicks
-    }
-    return initialPicks
-  })
+  const [picks, setPicks] = useState(initialPicks)
   const [liveGames, setLiveGames] = useState<GameData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
@@ -163,12 +163,46 @@ export default function NFLPickem() {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const [showPickModal, setShowPickModal] = useState(false)
   
-  // Save picks to localStorage whenever they change
+  // Load picks from Supabase on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('nfl-pickem-picks', JSON.stringify(picks))
+    loadPicksFromSupabase()
+  }, [])
+  
+  const loadPicksFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase.from('picks').select('*')
+      if (error) throw error
+      
+      if (data) {
+        const picksMap: Record<string, Record<string, string>> = {}
+        data.forEach((pick: any) => {
+          if (!picksMap[pick.player]) picksMap[pick.player] = {}
+          picksMap[pick.player][pick.game_id] = pick.pick
+        })
+        setPicks(picksMap)
+      }
+    } catch (error) {
+      console.error('Error loading picks:', error)
     }
-  }, [picks])
+  }
+  
+  const savePickToSupabase = async (player: string, gameId: string, pick: string) => {
+    try {
+      const { error } = await supabase
+        .from('picks')
+        .upsert({
+          player,
+          game_id: gameId,
+          pick
+        }, { 
+          onConflict: 'player,game_id'
+        })
+      
+      if (error) throw error
+    } catch (error) {
+      console.error('Error saving pick:', error)
+    }
+  }
   
   // Player login state
   const [loggedInPlayer, setLoggedInPlayer] = useState<string | null>(null)
@@ -722,10 +756,14 @@ export default function NFLPickem() {
                               <td key={gameId} className={`pick-cell ${isCorrect ? 'correct' : 'incorrect'}`}>
                                 <select
                                   value={pick || ''}
-                                  onChange={(e) => setPicks((prev: Record<string, Record<string, string>>) => ({
-                                    ...prev,
-                                    [player]: { ...prev[player], [gameId]: e.target.value }
-                                  }))}
+                                  onChange={async (e) => {
+                                    const newPick = e.target.value
+                                    setPicks((prev: Record<string, Record<string, string>>) => ({
+                                      ...prev,
+                                      [player]: { ...prev[player], [gameId]: newPick }
+                                    }))
+                                    await savePickToSupabase(player, gameId, newPick)
+                                  }}
                                   style={{
                                     background: 'var(--bg-dark)',
                                     color: 'var(--text-primary)',
@@ -809,10 +847,14 @@ export default function NFLPickem() {
                               >
                                 <select
                                   value={pick || ''}
-                                  onChange={(e) => setPicks((prev: Record<string, Record<string, string>>) => ({
-                                    ...prev,
-                                    [player]: { ...prev[player], [game.id]: e.target.value }
-                                  }))}
+                                  onChange={async (e) => {
+                                    const newPick = e.target.value
+                                    setPicks((prev: Record<string, Record<string, string>>) => ({
+                                      ...prev,
+                                      [player]: { ...prev[player], [game.id]: newPick }
+                                    }))
+                                    await savePickToSupabase(player, game.id, newPick)
+                                  }}
                                   style={{
                                     background: 'var(--bg-dark)',
                                     color: 'var(--text-primary)',
@@ -881,7 +923,7 @@ export default function NFLPickem() {
                       <div key={game.id} className="pick-matchup">
                         <div 
                           className={`pick-option ${currentPick === game.awayTeam ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
-                          onClick={() => {
+                          onClick={async () => {
                             if (isLocked || !loggedInPlayer) return
                             setPicks((prev: Record<string, Record<string, string>>) => ({
                               ...prev,
@@ -890,6 +932,7 @@ export default function NFLPickem() {
                                 [game.id]: game.awayTeam
                               }
                             }))
+                            await savePickToSupabase(loggedInPlayer, game.id, game.awayTeam)
                           }}
                         >
                           <span className="seed-badge">{game.awaySeed}</span>
@@ -905,7 +948,7 @@ export default function NFLPickem() {
                         
                         <div 
                           className={`pick-option ${currentPick === game.homeTeam ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
-                          onClick={() => {
+                          onClick={async () => {
                             if (isLocked || !loggedInPlayer) return
                             setPicks((prev: Record<string, Record<string, string>>) => ({
                               ...prev,
@@ -914,6 +957,7 @@ export default function NFLPickem() {
                                 [game.id]: game.homeTeam
                               }
                             }))
+                            await savePickToSupabase(loggedInPlayer, game.id, game.homeTeam)
                           }}
                         >
                           <span className="seed-badge">{game.homeSeed}</span>
@@ -988,7 +1032,9 @@ export default function NFLPickem() {
                                 >
                                   <select
                                     value={pick || ''}
-                                    onChange={(e) => setPicks((prev: Record<string, Record<string, string>>) => ({
+                                    onChange={async (e) => {
+                                      const newPick = e.target.value
+                                      setPicks((prev: Record<string, Record<string, string>>) => ({
                                       ...prev,
                                       [player]: { ...prev[player], [game.id]: e.target.value }
                                     }))}
@@ -1083,7 +1129,9 @@ export default function NFLPickem() {
                                 >
                                   <select
                                     value={pick || ''}
-                                    onChange={(e) => setPicks((prev: Record<string, Record<string, string>>) => ({
+                                    onChange={async (e) => {
+                                      const newPick = e.target.value
+                                      setPicks((prev: Record<string, Record<string, string>>) => ({
                                       ...prev,
                                       [player]: { ...prev[player], [game.id]: e.target.value }
                                     }))}
