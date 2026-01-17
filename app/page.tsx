@@ -380,6 +380,8 @@ export default function NFLPickem() {
           { id: 'live', label: '📺 Live Scores' },
           { id: 'wildcard', label: 'Wild Card' },
           { id: 'divisional', label: 'Divisional' },
+          { id: 'conference', label: 'Conference' },
+          { id: 'superbowl', label: 'Super Bowl' },
           { id: 'picks', label: '📝 My Picks' },
           { id: 'scoring', label: 'How It Works' },
         ].map(tab => (
@@ -903,6 +905,45 @@ export default function NFLPickem() {
         </div>
       )}
 
+      {/* Conference Championship Tab */}
+      {activeTab === 'conference' && (
+        <div className="fade-in">
+          <div className="card-header" style={{ background: 'transparent', border: 'none', padding: '0 0 1rem 0' }}>
+            <h2>🏈 Conference Championship</h2>
+            <span style={{ background: 'var(--accent-gold)', color: 'var(--bg-dark)', padding: '0.3rem 0.8rem', borderRadius: '4px', fontSize: '0.8rem' }}>4 pts + seed</span>
+          </div>
+          
+          <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
+              Matchups will be determined after Divisional Round concludes
+            </p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '1rem' }}>
+              AFC Championship: TBD vs TBD<br />
+              NFC Championship: TBD vs TBD
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Super Bowl Tab */}
+      {activeTab === 'superbowl' && (
+        <div className="fade-in">
+          <div className="card-header" style={{ background: 'transparent', border: 'none', padding: '0 0 1rem 0' }}>
+            <h2>🏈 Super Bowl</h2>
+            <span style={{ background: 'var(--accent-gold)', color: 'var(--bg-dark)', padding: '0.3rem 0.8rem', borderRadius: '4px', fontSize: '0.8rem' }}>8 pts + seed</span>
+          </div>
+          
+          <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
+              Matchup will be determined after Conference Championships conclude
+            </p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '1rem' }}>
+              AFC Champion vs NFC Champion
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Scoring Tab */}
       {activeTab === 'scoring' && (
         <div className="fade-in">
@@ -940,6 +981,35 @@ export default function NFLPickem() {
                   <span style={{ fontFamily: 'Bebas Neue', fontSize: '1.3rem', color: 'var(--accent-green)' }}>
                     2 (base) + 1 (seed) = 3 points
                   </span>
+                </p>
+              </div>
+              
+              <div style={{ marginTop: '2rem', padding: '1.25rem', background: 'var(--bg-card-alt)', borderRadius: '12px' }}>
+                <h4 style={{ fontFamily: 'Oswald', marginBottom: '1rem' }}>Playoff Bracket</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', fontSize: '0.85rem' }}>
+                  <div>
+                    <p style={{ color: 'var(--accent-gold)', fontWeight: 'bold', marginBottom: '0.5rem' }}>AFC</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>1. Broncos (bye)</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>2. Patriots</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>3. Jaguars</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>4. Steelers</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>5. Texans</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>6. Bills</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>7. Chargers</p>
+                  </div>
+                  <div>
+                    <p style={{ color: 'var(--accent-gold)', fontWeight: 'bold', marginBottom: '0.5rem' }}>NFC</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>1. Seahawks (bye)</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>2. Bears</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>3. Eagles</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>4. Panthers</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>5. Rams</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>6. 49ers</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>7. Packers</p>
+                  </div>
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '1rem', textAlign: 'center' }}>
+                  Wild Card → Divisional → Conference → Super Bowl
                 </p>
               </div>
             </div>
