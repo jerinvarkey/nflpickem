@@ -1036,8 +1036,10 @@ export default function NFLPickem() {
                                       const newPick = e.target.value
                                       setPicks((prev: Record<string, Record<string, string>>) => ({
                                       ...prev,
-                                      [player]: { ...prev[player], [game.id]: e.target.value }
-                                    }))}
+                                      [player]: { ...prev[player], [game.id]: newPick }
+                                    }))
+                                      await savePickToSupabase(player, game.id, newPick)
+                                    }}
                                     style={{
                                       background: 'var(--bg-dark)',
                                       color: 'var(--text-primary)',
@@ -1133,8 +1135,10 @@ export default function NFLPickem() {
                                       const newPick = e.target.value
                                       setPicks((prev: Record<string, Record<string, string>>) => ({
                                       ...prev,
-                                      [player]: { ...prev[player], [game.id]: e.target.value }
-                                    }))}
+                                      [player]: { ...prev[player], [game.id]: newPick }
+                                    }))
+                                      await savePickToSupabase(player, game.id, newPick)
+                                    }}
                                     style={{
                                       background: 'var(--bg-dark)',
                                       color: 'var(--text-primary)',
