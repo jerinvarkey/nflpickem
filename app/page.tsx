@@ -395,10 +395,16 @@ export default function NFLPickem() {
     return new Date() >= game.kickoff
   }
 
-  // Check if picks are locked
+  // Check if picks are locked (locked after kickoff for everyone, even admin)
   const arePicksLocked = (gameId: string) => {
-    if (isAdminAuth) return false
-    return hasGameStarted(gameId)
+    const game = liveGames.find(g => g.id === gameId)
+    if (!game) return false
+    
+    // Lock if game is live or final
+    if (game.status === 'live' || game.status === 'final') return true
+    
+    // Lock if kickoff has passed
+    return new Date() >= game.kickoff
   }
 
   // Leaderboard
@@ -755,7 +761,14 @@ export default function NFLPickem() {
                   <tr>
                     <th>Player</th>
                     {liveGames.filter(g => g.round === 'divisional').map(game => (
-                      <th key={game.id}>{game.awayTeam} @ {game.homeTeam}</th>
+                      <th key={game.id}>
+                        {game.awayTeam} @ {game.homeTeam}
+                        {game.status !== 'scheduled' && (
+                          <div style={{ fontSize: '0.9rem', color: 'var(--accent-gold)', marginTop: '0.25rem' }}>
+                            {game.awayScore} - {game.homeScore} {game.status === 'live' && '🔴'}
+                          </div>
+                        )}
+                      </th>
                     ))}
                     <th>Points</th>
                   </tr>
@@ -765,6 +778,7 @@ export default function NFLPickem() {
                     const playerPicks = picks[player] || {}
                     const { breakdown } = calculatePoints(player)
                     const canEdit = (loggedInPlayer === player || isAdminAuth)
+                    const canView = (loggedInPlayer === player || isAdminAuth)
                     
                     return (
                       <tr key={player}>
@@ -774,6 +788,7 @@ export default function NFLPickem() {
                           const isLocked = arePicksLocked(game.id)
                           const isCorrect = game.winner && pick === game.winner
                           const isIncorrect = game.winner && pick && pick !== game.winner
+                          const hideFromOthers = !isLocked && !canView
                           
                           if (canEdit && !isLocked) {
                             return (
@@ -806,8 +821,8 @@ export default function NFLPickem() {
                           }
                           
                           return (
-                            <td key={game.id} className={`pick-cell ${isLocked && !pick ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
-                              {isLocked && !pick ? '🔒' : pick || '-'}
+                            <td key={game.id} className={`pick-cell ${hideFromOthers ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
+                              {hideFromOthers ? '🔒' : pick || '-'}
                             </td>
                           )
                         })}
@@ -838,7 +853,14 @@ export default function NFLPickem() {
                     <tr>
                       <th>Player</th>
                       {liveGames.filter(g => g.round === 'conference').map(game => (
-                        <th key={game.id}>{game.awayTeam} @ {game.homeTeam}</th>
+                        <th key={game.id}>
+                          {game.awayTeam} @ {game.homeTeam}
+                          {game.status !== 'scheduled' && (
+                            <div style={{ fontSize: '0.9rem', color: 'var(--accent-gold)', marginTop: '0.25rem' }}>
+                              {game.awayScore} - {game.homeScore} {game.status === 'live' && '🔴'}
+                            </div>
+                          )}
+                        </th>
                       ))}
                       <th>Points</th>
                     </tr>
@@ -848,6 +870,7 @@ export default function NFLPickem() {
                       const playerPicks = picks[player] || {}
                       const { breakdown } = calculatePoints(player)
                       const canEdit = (loggedInPlayer === player || isAdminAuth)
+                      const canView = (loggedInPlayer === player || isAdminAuth)
                       
                       return (
                         <tr key={player}>
@@ -857,6 +880,7 @@ export default function NFLPickem() {
                             const isLocked = arePicksLocked(game.id)
                             const isCorrect = game.winner && pick === game.winner
                             const isIncorrect = game.winner && pick && pick !== game.winner
+                            const hideFromOthers = !isLocked && !canView
                             
                             if (canEdit && !isLocked) {
                               return (
@@ -889,8 +913,8 @@ export default function NFLPickem() {
                             }
                             
                             return (
-                              <td key={game.id} className={`pick-cell ${isLocked && !pick ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
-                                {isLocked && !pick ? '🔒' : pick || '-'}
+                              <td key={game.id} className={`pick-cell ${hideFromOthers ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
+                                {hideFromOthers ? '🔒' : pick || '-'}
                               </td>
                             )
                           })}
@@ -922,7 +946,14 @@ export default function NFLPickem() {
                     <tr>
                       <th>Player</th>
                       {liveGames.filter(g => g.round === 'superbowl').map(game => (
-                        <th key={game.id}>{game.awayTeam} vs {game.homeTeam}</th>
+                        <th key={game.id}>
+                          {game.awayTeam} vs {game.homeTeam}
+                          {game.status !== 'scheduled' && (
+                            <div style={{ fontSize: '0.9rem', color: 'var(--accent-gold)', marginTop: '0.25rem' }}>
+                              {game.awayScore} - {game.homeScore} {game.status === 'live' && '🔴'}
+                            </div>
+                          )}
+                        </th>
                       ))}
                       <th>Points</th>
                     </tr>
@@ -932,6 +963,7 @@ export default function NFLPickem() {
                       const playerPicks = picks[player] || {}
                       const { breakdown } = calculatePoints(player)
                       const canEdit = (loggedInPlayer === player || isAdminAuth)
+                      const canView = (loggedInPlayer === player || isAdminAuth)
                       
                       return (
                         <tr key={player}>
@@ -941,6 +973,7 @@ export default function NFLPickem() {
                             const isLocked = arePicksLocked(game.id)
                             const isCorrect = game.winner && pick === game.winner
                             const isIncorrect = game.winner && pick && pick !== game.winner
+                            const hideFromOthers = !isLocked && !canView
                             
                             if (canEdit && !isLocked) {
                               return (
@@ -973,8 +1006,8 @@ export default function NFLPickem() {
                             }
                             
                             return (
-                              <td key={game.id} className={`pick-cell ${isLocked && !pick ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
-                                {isLocked && !pick ? '🔒' : pick || '-'}
+                              <td key={game.id} className={`pick-cell ${hideFromOthers ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
+                                {hideFromOthers ? '🔒' : pick || '-'}
                               </td>
                             )
                           })}
@@ -1026,6 +1059,7 @@ export default function NFLPickem() {
                     value={loginPassword}
                     onChange={e => setLoginPassword(e.target.value)}
                     onKeyPress={e => e.key === 'Enter' && handleLogin()}
+                    placeholder="e.g., jerin123"
                   />
                 </div>
                 {loginError && <div className="error">{loginError}</div>}
