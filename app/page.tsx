@@ -1031,6 +1031,9 @@ export default function NFLPickem() {
                 <button className="modal-close" onClick={() => setShowLoginModal(false)}>&times;</button>
               </div>
               <div className="modal-body">
+                <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'var(--bg-card-alt)', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  💡 Your password is your name + "123" (e.g., jerin123)
+                </div>
                 <div className="form-group">
                   <label>Select Your Name</label>
                   <select
@@ -1059,7 +1062,6 @@ export default function NFLPickem() {
                     value={loginPassword}
                     onChange={e => setLoginPassword(e.target.value)}
                     onKeyPress={e => e.key === 'Enter' && handleLogin()}
-                    placeholder="e.g., jerin123"
                   />
                 </div>
                 {loginError && <div className="error">{loginError}</div>}
