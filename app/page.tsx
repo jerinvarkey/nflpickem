@@ -347,7 +347,7 @@ export default function NFLPickem() {
 
   // Admin authentication
   const handleAdminLogin = () => {
-    if (adminPassword === 'admin123') {
+    if (adminPassword === 'stgs2026') {
       setIsAdminAuth(true)
       setShowAdmin(false)
       setAdminPassword('')
@@ -614,14 +614,19 @@ export default function NFLPickem() {
 
         {/* Login/Admin Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             {loggedInPlayer ? (
-              <span style={{ color: 'var(--accent-green)' }}>
-                ✓ Logged in as <strong>{loggedInPlayer}</strong>
-                <button onClick={handleLogout} style={{ marginLeft: '0.5rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'underline' }}>
+              <>
+                <span style={{ color: 'var(--accent-green)' }}>
+                  ✓ Logged in as <strong>{loggedInPlayer}</strong>
+                </span>
+                <button onClick={() => setShowPasswordModal(true)} className="btn btn-small btn-secondary">
+                  Change Password
+                </button>
+                <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'underline' }}>
                   Logout
                 </button>
-              </span>
+              </>
             ) : (
               <button className="btn" onClick={() => setShowLoginModal(true)}>
                 🔑 Login to Make Picks
@@ -640,6 +645,9 @@ export default function NFLPickem() {
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
           <button onClick={() => setActiveTab('leaderboard')} className={`btn ${activeTab === 'leaderboard' ? '' : 'btn-secondary'}`} style={{ flex: '1', minWidth: '120px' }}>
             🏆 Standings
+          </button>
+          <button onClick={() => setActiveTab('wildcard')} className={`btn ${activeTab === 'wildcard' ? '' : 'btn-secondary'}`} style={{ flex: '1', minWidth: '120px' }}>
+            🏈 Wild Card
           </button>
           <button onClick={() => setActiveTab('divisional')} className={`btn ${activeTab === 'divisional' ? '' : 'btn-secondary'}`} style={{ flex: '1', minWidth: '120px' }}>
             🏈 Divisional
@@ -691,125 +699,124 @@ export default function NFLPickem() {
           </div>
         )}
 
+        {/* Wildcard Tab */}
+        {activeTab === 'wildcard' && (
+          <div className="card">
+            <div className="card-header">
+              <h3>🏆 Wild Card Round (Complete)</h3>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    {liveGames.filter(g => g.round === 'wildcard').map(game => (
+                      <th key={game.id}>{game.awayTeam} @ {game.homeTeam}</th>
+                    ))}
+                    <th>Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {players.map(player => {
+                    const playerPicks = picks[player] || {}
+                    const { breakdown } = calculatePoints(player)
+                    
+                    return (
+                      <tr key={player}>
+                        <td style={{ fontWeight: '700' }}>{player}</td>
+                        {liveGames.filter(g => g.round === 'wildcard').map(game => {
+                          const pick = playerPicks[game.id]
+                          const isCorrect = pick === game.winner
+                          return (
+                            <td key={game.id} className={`pick-cell ${isCorrect ? 'correct' : 'incorrect'}`}>
+                              {pick || '-'}
+                            </td>
+                          )
+                        })}
+                        <td className="points">{breakdown.wildcard}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Divisional Tab */}
         {activeTab === 'divisional' && (
-          <div>
-            {/* Wildcard Results */}
-            <div className="card" style={{ marginBottom: '2rem' }}>
-              <div className="card-header">
-                <h3>🏆 Wild Card Round (Complete)</h3>
-              </div>
-              <div style={{ overflowX: 'auto' }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Player</th>
-                      {liveGames.filter(g => g.round === 'wildcard').map(game => (
-                        <th key={game.id}>{game.awayTeam} @ {game.homeTeam}</th>
-                      ))}
-                      <th>Points</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {players.map(player => {
-                      const playerPicks = picks[player] || {}
-                      const { breakdown } = calculatePoints(player)
-                      
-                      return (
-                        <tr key={player}>
-                          <td style={{ fontWeight: '700' }}>{player}</td>
-                          {liveGames.filter(g => g.round === 'wildcard').map(game => {
-                            const pick = playerPicks[game.id]
-                            const isCorrect = pick === game.winner
-                            return (
-                              <td key={game.id} className={`pick-cell ${isCorrect ? 'correct' : 'incorrect'}`}>
-                                {pick || '-'}
-                              </td>
-                            )
-                          })}
-                          <td className="points">{breakdown.wildcard}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+          <div className="card">
+            <div className="card-header">
+              <h3>🔥 Divisional Round</h3>
             </div>
-
-            {/* Divisional Picks */}
-            <div className="card">
-              <div className="card-header">
-                <h3>🔥 Divisional Round</h3>
-              </div>
-              <div style={{ overflowX: 'auto' }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Player</th>
-                      {liveGames.filter(g => g.round === 'divisional').map(game => (
-                        <th key={game.id}>{game.awayTeam} @ {game.homeTeam}</th>
-                      ))}
-                      <th>Points</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {players.map(player => {
-                      const playerPicks = picks[player] || {}
-                      const { breakdown } = calculatePoints(player)
-                      const canEdit = (loggedInPlayer === player || isAdminAuth)
-                      
-                      return (
-                        <tr key={player}>
-                          <td style={{ fontWeight: '700' }}>{player}</td>
-                          {liveGames.filter(g => g.round === 'divisional').map(game => {
-                            const pick = playerPicks[game.id]
-                            const isLocked = arePicksLocked(game.id)
-                            const isCorrect = game.winner && pick === game.winner
-                            const isIncorrect = game.winner && pick && pick !== game.winner
-                            
-                            if (canEdit && !isLocked) {
-                              return (
-                                <td key={game.id} className={`pick-cell ${isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
-                                  <select
-                                    value={pick || ''}
-                                    onChange={async (e) => {
-                                      const newPick = e.target.value
-                                      setPicks(prev => ({
-                                        ...prev,
-                                        [player]: { ...prev[player], [game.id]: newPick }
-                                      }))
-                                      await savePickToSupabase(player, game.id, newPick)
-                                    }}
-                                    style={{
-                                      background: 'var(--bg-dark)',
-                                      color: 'var(--text-primary)',
-                                      border: '1px solid var(--border-color)',
-                                      borderRadius: '4px',
-                                      padding: '0.25rem',
-                                      fontSize: '0.85rem'
-                                    }}
-                                  >
-                                    <option value="">-</option>
-                                    <option value={game.awayTeam}>{game.awayTeam}</option>
-                                    <option value={game.homeTeam}>{game.homeTeam}</option>
-                                  </select>
-                                </td>
-                              )
-                            }
-                            
+            <div style={{ overflowX: 'auto' }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    {liveGames.filter(g => g.round === 'divisional').map(game => (
+                      <th key={game.id}>{game.awayTeam} @ {game.homeTeam}</th>
+                    ))}
+                    <th>Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {players.map(player => {
+                    const playerPicks = picks[player] || {}
+                    const { breakdown } = calculatePoints(player)
+                    const canEdit = (loggedInPlayer === player || isAdminAuth)
+                    
+                    return (
+                      <tr key={player}>
+                        <td style={{ fontWeight: '700' }}>{player}</td>
+                        {liveGames.filter(g => g.round === 'divisional').map(game => {
+                          const pick = playerPicks[game.id]
+                          const isLocked = arePicksLocked(game.id)
+                          const isCorrect = game.winner && pick === game.winner
+                          const isIncorrect = game.winner && pick && pick !== game.winner
+                          
+                          if (canEdit && !isLocked) {
                             return (
-                              <td key={game.id} className={`pick-cell ${isLocked && !pick ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
-                                {isLocked && !pick ? '🔒' : pick || '-'}
+                              <td key={game.id} className={`pick-cell ${isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
+                                <select
+                                  value={pick || ''}
+                                  onChange={async (e) => {
+                                    const newPick = e.target.value
+                                    setPicks(prev => ({
+                                      ...prev,
+                                      [player]: { ...prev[player], [game.id]: newPick }
+                                    }))
+                                    await savePickToSupabase(player, game.id, newPick)
+                                  }}
+                                  style={{
+                                    background: 'var(--bg-dark)',
+                                    color: 'var(--text-primary)',
+                                    border: '1px solid var(--border-color)',
+                                    borderRadius: '4px',
+                                    padding: '0.25rem',
+                                    fontSize: '0.85rem'
+                                  }}
+                                >
+                                  <option value="">-</option>
+                                  <option value={game.awayTeam}>{game.awayTeam}</option>
+                                  <option value={game.homeTeam}>{game.homeTeam}</option>
+                                </select>
                               </td>
                             )
-                          })}
-                          <td className="points">{breakdown.divisional}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          }
+                          
+                          return (
+                            <td key={game.id} className={`pick-cell ${isLocked && !pick ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
+                              {isLocked && !pick ? '🔒' : pick || '-'}
+                            </td>
+                          )
+                        })}
+                        <td className="points">{breakdown.divisional}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -992,13 +999,25 @@ export default function NFLPickem() {
               </div>
               <div className="modal-body">
                 <div className="form-group">
-                  <label>Name</label>
-                  <input
-                    type="text"
+                  <label>Select Your Name</label>
+                  <select
                     value={loginName}
                     onChange={e => setLoginName(e.target.value)}
-                    onKeyPress={e => e.key === 'Enter' && handleLogin()}
-                  />
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      background: 'var(--bg-dark)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      color: 'var(--text-primary)',
+                      fontSize: '1rem'
+                    }}
+                  >
+                    <option value="">Choose your name...</option>
+                    {players.map(name => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label>Password</label>
@@ -1038,6 +1057,51 @@ export default function NFLPickem() {
                 </div>
                 <button className="btn" onClick={handleAdminLogin} style={{ width: '100%', marginTop: '1rem' }}>
                   Login as Admin
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Password Change Modal */}
+        {showPasswordModal && (
+          <div className="modal-overlay" onClick={() => setShowPasswordModal(false)}>
+            <div className="modal fade-in" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Change Password</h3>
+                <button className="modal-close" onClick={() => setShowPasswordModal(false)}>&times;</button>
+              </div>
+              <div className="modal-body">
+                {!isAdminAuth && (
+                  <div className="form-group">
+                    <label>Current Password</label>
+                    <input
+                      type="password"
+                      value={oldPassword}
+                      onChange={e => setOldPassword(e.target.value)}
+                    />
+                  </div>
+                )}
+                <div className="form-group">
+                  <label>New Password</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    onKeyPress={e => e.key === 'Enter' && handlePasswordChange()}
+                  />
+                </div>
+                {passwordError && <div className="error">{passwordError}</div>}
+                <button className="btn" onClick={handlePasswordChange} style={{ width: '100%', marginTop: '1rem' }}>
+                  Change Password
                 </button>
               </div>
             </div>
