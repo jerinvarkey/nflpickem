@@ -777,7 +777,6 @@ export default function NFLPickem() {
                   {players.map(player => {
                     const playerPicks = picks[player] || {}
                     const { breakdown } = calculatePoints(player)
-                    const canEdit = (loggedInPlayer === player && !arePicksLocked(game.id)) || isAdminAuth
                     const canView = (loggedInPlayer === player || isAdminAuth)
                     
                     return (
@@ -786,6 +785,7 @@ export default function NFLPickem() {
                         {liveGames.filter(g => g.round === 'divisional').map(game => {
                           const pick = playerPicks[game.id]
                           const isLocked = arePicksLocked(game.id)
+                          const canEdit = (loggedInPlayer === player && !isLocked) || isAdminAuth
                           const isCorrect = game.winner && pick === game.winner
                           const isIncorrect = game.winner && pick && pick !== game.winner
                           const hideFromOthers = !isLocked && !canView
@@ -869,7 +869,6 @@ export default function NFLPickem() {
                     {players.map(player => {
                       const playerPicks = picks[player] || {}
                       const { breakdown } = calculatePoints(player)
-                      const canEdit = (loggedInPlayer === player && !arePicksLocked(game.id)) || isAdminAuth
                       const canView = (loggedInPlayer === player || isAdminAuth)
                       
                       return (
@@ -878,6 +877,7 @@ export default function NFLPickem() {
                           {liveGames.filter(g => g.round === 'conference').map(game => {
                             const pick = playerPicks[game.id]
                             const isLocked = arePicksLocked(game.id)
+                            const canEdit = (loggedInPlayer === player && !isLocked) || isAdminAuth
                             const isCorrect = game.winner && pick === game.winner
                             const isIncorrect = game.winner && pick && pick !== game.winner
                             const hideFromOthers = !isLocked && !canView
@@ -962,7 +962,6 @@ export default function NFLPickem() {
                     {players.map(player => {
                       const playerPicks = picks[player] || {}
                       const { breakdown } = calculatePoints(player)
-                      const canEdit = (loggedInPlayer === player && !arePicksLocked(game.id)) || isAdminAuth
                       const canView = (loggedInPlayer === player || isAdminAuth)
                       
                       return (
@@ -971,6 +970,7 @@ export default function NFLPickem() {
                           {liveGames.filter(g => g.round === 'superbowl').map(game => {
                             const pick = playerPicks[game.id]
                             const isLocked = arePicksLocked(game.id)
+                            const canEdit = (loggedInPlayer === player && !isLocked) || isAdminAuth
                             const isCorrect = game.winner && pick === game.winner
                             const isIncorrect = game.winner && pick && pick !== game.winner
                             const hideFromOthers = !isLocked && !canView
