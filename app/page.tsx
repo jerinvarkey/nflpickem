@@ -86,6 +86,15 @@ const ROUNDS: Record<RoundKey, RoundInfo> = {
   superbowl: { name: 'Super Bowl', basePoints: 8, games: 1 }
 }
 
+// Hardcoded divisional round matchups to ensure stable game IDs
+// This prevents picks from getting lost when ESPN changes game order in their API
+const DIVISIONAL_MATCHUPS: Record<string, { away: string; home: string }> = {
+  'div-1': { away: 'Bills', home: 'Broncos' },
+  'div-2': { away: 'Texans', home: 'Patriots' },
+  'div-3': { away: '49ers', home: 'Seahawks' },
+  'div-4': { away: 'Rams', home: 'Bears' }
+}
+
 // Team seeding lookup (update for your season)
 const TEAM_SEEDS: Record<string, { seed: number; conference: 'AFC' | 'NFC' }> = {
   // AFC
@@ -129,15 +138,15 @@ const initialPlayers = ['Jerin', 'Jijesh', 'Jaison', 'Jason', 'Jeff', 'Jogi', 'J
 
 const initialPicks: Record<string, Record<string, string>> = {
   'Jerin': { 'wc-1': 'Patriots', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': 'Eagles', 'wc-6': 'Rams', 'div-1': 'Bills', 'div-2': 'Texans', 'div-3': '49ers', 'div-4': 'Rams' },
-  'Jijesh': { 'wc-1': 'Patriots', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Packers', 'wc-5': 'Eagles', 'wc-6': 'Rams' },
-  'Jaison': { 'wc-1': 'Chargers', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': 'Eagles', 'wc-6': 'Rams' },
+  'Jijesh': { 'wc-1': 'Patriots', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Packers', 'wc-5': 'Eagles', 'wc-6': 'Rams', 'div-1': 'Bills', 'div-2': 'Texans', 'div-3': '49ers', 'div-4': 'Rams' },
+  'Jaison': { 'wc-1': 'Chargers', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': 'Eagles', 'wc-6': 'Rams', 'div-1': 'Bills', 'div-2': 'Texans', 'div-3': '49ers', 'div-4': 'Rams' },
   'Jason': { 'wc-1': 'Patriots', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': '49ers', 'wc-6': 'Rams', 'div-1': 'Bills', 'div-2': 'Texans', 'div-3': 'Seahawks', 'div-4': 'Rams' },
-  'Jeff': { 'wc-1': 'Patriots', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': '49ers', 'wc-6': 'Rams' },
+  'Jeff': { 'wc-1': 'Patriots', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': '49ers', 'wc-6': 'Rams', 'div-1': 'Bills', 'div-2': 'Texans', 'div-3': '49ers', 'div-4': 'Rams' },
   'Jogi': { 'wc-1': 'Patriots', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': '49ers', 'wc-6': 'Rams', 'div-1': 'Bills', 'div-2': 'Texans', 'div-3': '49ers', 'div-4': 'Rams' },
-  'Jubee': { 'wc-1': 'Patriots', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': '49ers', 'wc-6': 'Rams' },
-  'Nelson': { 'wc-1': 'Patriots', 'wc-2': 'Jaguars', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': 'Eagles', 'wc-6': 'Rams', 'div-1': 'Bills', 'div-2': 'Texans', 'div-3': '49ers', 'div-4': 'Rams' },
-  'Paul': { 'wc-1': 'Chargers', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': 'Eagles', 'wc-6': 'Rams' },
-  'Renjith': { 'wc-1': 'Patriots', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': '49ers', 'wc-6': 'Rams' },
+  'Jubee': { 'wc-1': 'Patriots', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': '49ers', 'wc-6': 'Rams', 'div-1': 'Broncos', 'div-2': 'Texans', 'div-3': '49ers', 'div-4': 'Rams' },
+  'Nelson': { 'wc-1': 'Patriots', 'wc-2': 'Jaguars', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': 'Eagles', 'wc-6': 'Rams', 'div-1': 'Bills', 'div-2': 'Texans', 'div-3': '49ers', 'div-4': 'Bears' },
+  'Paul': { 'wc-1': 'Chargers', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': 'Eagles', 'wc-6': 'Rams', 'div-1': 'Bills', 'div-2': 'Seahawks', 'div-3': '49ers', 'div-4': 'Rams' },
+  'Renjith': { 'wc-1': 'Patriots', 'wc-2': 'Bills', 'wc-3': 'Texans', 'wc-4': 'Bears', 'wc-5': '49ers', 'wc-6': 'Rams', 'div-1': 'Bills', 'div-2': 'Seahawks', 'div-3': '49ers', 'div-4': 'Rams' },
 }
 
 // Wild card results (completed games)
@@ -271,8 +280,24 @@ export default function NFLPickem() {
           round = 'superbowl'
         }
         
+        // For divisional round, use hardcoded matchup mapping for stable IDs
+        let gameId = `${round.substring(0,3)}-${index + 1}`
+        if (round === 'divisional') {
+          const homeTeam = home.team.shortDisplayName
+          const awayTeam = away.team.shortDisplayName
+          
+          // Find matching game ID from our hardcoded matchups
+          const matchingId = Object.entries(DIVISIONAL_MATCHUPS).find(([id, matchup]) => {
+            return matchup.home === homeTeam && matchup.away === awayTeam
+          })?.[0]
+          
+          if (matchingId) {
+            gameId = matchingId
+          }
+        }
+        
         return {
-          id: `${round.substring(0,3)}-${index + 1}`,
+          id: gameId,
           homeTeam: home.team.shortDisplayName,
           awayTeam: away.team.shortDisplayName,
           homeScore: parseInt(home.score || '0'),
