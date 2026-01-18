@@ -777,7 +777,7 @@ export default function NFLPickem() {
                   {players.map(player => {
                     const playerPicks = picks[player] || {}
                     const { breakdown } = calculatePoints(player)
-                    const canEdit = (loggedInPlayer === player || isAdminAuth)
+                    const canEdit = (loggedInPlayer === player && !arePicksLocked(game.id)) || isAdminAuth
                     const canView = (loggedInPlayer === player || isAdminAuth)
                     
                     return (
@@ -790,7 +790,7 @@ export default function NFLPickem() {
                           const isIncorrect = game.winner && pick && pick !== game.winner
                           const hideFromOthers = !isLocked && !canView
                           
-                          if (canEdit && !isLocked) {
+                          if (canEdit) {
                             return (
                               <td key={game.id} className={`pick-cell ${isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
                                 <select
@@ -869,7 +869,7 @@ export default function NFLPickem() {
                     {players.map(player => {
                       const playerPicks = picks[player] || {}
                       const { breakdown } = calculatePoints(player)
-                      const canEdit = (loggedInPlayer === player || isAdminAuth)
+                      const canEdit = (loggedInPlayer === player && !arePicksLocked(game.id)) || isAdminAuth
                       const canView = (loggedInPlayer === player || isAdminAuth)
                       
                       return (
@@ -882,7 +882,7 @@ export default function NFLPickem() {
                             const isIncorrect = game.winner && pick && pick !== game.winner
                             const hideFromOthers = !isLocked && !canView
                             
-                            if (canEdit && !isLocked) {
+                            if (canEdit) {
                               return (
                                 <td key={game.id} className={`pick-cell ${isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
                                   <select
@@ -962,7 +962,7 @@ export default function NFLPickem() {
                     {players.map(player => {
                       const playerPicks = picks[player] || {}
                       const { breakdown } = calculatePoints(player)
-                      const canEdit = (loggedInPlayer === player || isAdminAuth)
+                      const canEdit = (loggedInPlayer === player && !arePicksLocked(game.id)) || isAdminAuth
                       const canView = (loggedInPlayer === player || isAdminAuth)
                       
                       return (
@@ -975,7 +975,7 @@ export default function NFLPickem() {
                             const isIncorrect = game.winner && pick && pick !== game.winner
                             const hideFromOthers = !isLocked && !canView
                             
-                            if (canEdit && !isLocked) {
+                            if (canEdit) {
                               return (
                                 <td key={game.id} className={`pick-cell ${isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
                                   <select
