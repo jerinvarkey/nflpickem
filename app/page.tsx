@@ -187,14 +187,28 @@ export default function NFLPickem() {
   // Fetch live scores from ESPN (updates hardcoded games + auto-detects conference/SB)
   const fetchScores = useCallback(async () => {
     try {
-      const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard')
-      const data = await res.json()
+      // Fetch all playoff weeks: 1=Wildcard, 2=Divisional, 3=Conference, 4=SuperBowl
+      const urls = [
+        'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=3&week=1',
+        'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=3&week=2',
+        'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=3&week=3',
+        'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=3&week=4'
+      ]
+      
+      const allEvents: any[] = []
+      for (const url of urls) {
+        const res = await fetch(url)
+        const data = await res.json()
+        if (data.events) {
+          allEvents.push(...data.events)
+        }
+      }
       
       const allGames: GameData[] = []
       
       // First, update our hardcoded games with live scores
       PLAYOFF_GAMES.forEach(game => {
-        const espnGame = data.events?.find((e: any) => {
+        const espnGame = allEvents.find((e: any) => {
           const comp = e.competitions[0]
           const home = comp.competitors.find((c: any) => c.homeAway === 'home')
           const away = comp.competitors.find((c: any) => c.homeAway === 'away')
@@ -232,13 +246,16 @@ export default function NFLPickem() {
       })
       
       // Now auto-detect conference championship and super bowl games from ESPN
-      data.events?.forEach((event: any) => {
+      allEvents.forEach((event: any) => {
         const eventName = event.name.toLowerCase()
+        const week = event.week?.number
         let round: 'conference' | 'superbowl' | null = null
         
-        if (eventName.includes('conference') || eventName.includes('championship')) {
+        // Week 3 of playoffs = Conference Championships
+        // Week 4 of playoffs = Super Bowl
+        if (week === 3 || eventName.includes('conference') || eventName.includes('championship')) {
           round = 'conference'
-        } else if (eventName.includes('super bowl')) {
+        } else if (week === 4 || eventName.includes('super bowl')) {
           round = 'superbowl'
         }
         
