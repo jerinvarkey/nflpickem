@@ -703,19 +703,31 @@ export default function NFLPickem() {
                   </tr>
                 </thead>
                 <tbody>
-                  {leaderboard.map((item, idx) => (
-                    <tr key={item.player}>
-                      <td style={{ fontSize: '1.5rem' }}>
-                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
-                      </td>
-                      <td style={{ fontWeight: '700', fontSize: '1.1rem' }}>{item.player}</td>
-                      <td>{item.breakdown.wildcard}</td>
-                      <td>{item.breakdown.divisional}</td>
-                      <td>{item.breakdown.conference}</td>
-                      <td>{item.breakdown.superbowl}</td>
-                      <td className="points">{item.total}</td>
-                    </tr>
-                  ))}
+                  {leaderboard.map((item, idx) => {
+                    // Calculate rank accounting for ties
+                    let rank = 1
+                    for (let i = 0; i < idx; i++) {
+                      if (leaderboard[i].total > item.total) {
+                        rank++
+                      }
+                    }
+                    
+                    const displayRank = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank
+                    
+                    return (
+                      <tr key={item.player}>
+                        <td style={{ fontSize: '1.5rem' }}>
+                          {displayRank}
+                        </td>
+                        <td style={{ fontWeight: '700', fontSize: '1.1rem' }}>{item.player}</td>
+                        <td>{item.breakdown.wildcard}</td>
+                        <td>{item.breakdown.divisional}</td>
+                        <td>{item.breakdown.conference}</td>
+                        <td>{item.breakdown.superbowl}</td>
+                        <td className="points">{item.total}</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
