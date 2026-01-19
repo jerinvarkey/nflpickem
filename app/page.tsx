@@ -734,7 +734,12 @@ export default function NFLPickem() {
                   <tr>
                     <th>Player</th>
                     {liveGames.filter(g => g.round === 'wildcard').map(game => (
-                      <th key={game.id}>{game.awayTeam} @ {game.homeTeam}</th>
+                      <th key={game.id}>
+                        {game.awayTeam} @ {game.homeTeam}
+                        <div style={{ fontSize: '0.9rem', color: 'var(--accent-gold)', marginTop: '0.25rem' }}>
+                          {game.awayScore} - {game.homeScore}
+                        </div>
+                      </th>
                     ))}
                     <th>Points</th>
                   </tr>
@@ -830,8 +835,8 @@ export default function NFLPickem() {
                                   }}
                                 >
                                   <option value="">-</option>
-                                  <option value={game.awayTeam}>{game.awayTeam}</option>
-                                  <option value={game.homeTeam}>{game.homeTeam}</option>
+                                  <option value={game.awayTeam}>{game.awayTeam} (+{ROUNDS.divisional.basePoints + game.awaySeed})</option>
+                                  <option value={game.homeTeam}>{game.homeTeam} (+{ROUNDS.divisional.basePoints + game.homeSeed})</option>
                                 </select>
                               </td>
                             )
@@ -922,8 +927,8 @@ export default function NFLPickem() {
                                     }}
                                   >
                                     <option value="">-</option>
-                                    <option value={game.awayTeam}>{game.awayTeam}</option>
-                                    <option value={game.homeTeam}>{game.homeTeam}</option>
+                                    <option value={game.awayTeam}>{game.awayTeam} (+{ROUNDS.conference.basePoints + game.awaySeed})</option>
+                                    <option value={game.homeTeam}>{game.homeTeam} (+{ROUNDS.conference.basePoints + game.homeSeed})</option>
                                   </select>
                                 </td>
                               )
@@ -1015,8 +1020,8 @@ export default function NFLPickem() {
                                     }}
                                   >
                                     <option value="">-</option>
-                                    <option value={game.awayTeam}>{game.awayTeam}</option>
-                                    <option value={game.homeTeam}>{game.homeTeam}</option>
+                                    <option value={game.awayTeam}>{game.awayTeam} (+{ROUNDS.superbowl.basePoints + game.awaySeed})</option>
+                                    <option value={game.homeTeam}>{game.homeTeam} (+{ROUNDS.superbowl.basePoints + game.homeSeed})</option>
                                   </select>
                                 </td>
                               )
