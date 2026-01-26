@@ -76,6 +76,10 @@ const PLAYOFF_GAMES: GameData[] = [
   { id: 'div-2', awayTeam: 'Texans', awaySeed: 5, homeTeam: 'Patriots', homeSeed: 2, homeScore: 0, awayScore: 0, status: 'scheduled', statusDetail: 'TBD', kickoff: new Date('2026-01-18T20:00:00'), winner: null, conference: 'AFC', round: 'divisional' },
   { id: 'div-3', awayTeam: '49ers', awaySeed: 6, homeTeam: 'Seahawks', homeSeed: 1, homeScore: 0, awayScore: 0, status: 'scheduled', statusDetail: 'TBD', kickoff: new Date('2026-01-19T20:00:00'), winner: null, conference: 'NFC', round: 'divisional' },
   { id: 'div-4', awayTeam: 'Rams', awaySeed: 5, homeTeam: 'Bears', homeSeed: 2, homeScore: 0, awayScore: 0, status: 'scheduled', statusDetail: 'TBD', kickoff: new Date('2026-01-19T20:00:00'), winner: null, conference: 'NFC', round: 'divisional' },
+  
+  // SUPER BOWL - UPDATE THESE TEAMS ONCE MATCHUP IS SET
+  // Uncomment and fill in once you know the matchup:
+  // { id: 'sb-1', awayTeam: 'TEAM1', awaySeed: X, homeTeam: 'TEAM2', homeSeed: Y, homeScore: 0, awayScore: 0, status: 'scheduled', statusDetail: 'TBD', kickoff: new Date('2026-02-09T18:30:00'), winner: null, conference: 'AFC', round: 'superbowl' },
 ]
 
 // Round scoring
@@ -187,12 +191,15 @@ export default function NFLPickem() {
   // Fetch live scores from ESPN (updates hardcoded games + auto-detects conference/SB)
   const fetchScores = useCallback(async () => {
     try {
-      // Fetch all playoff weeks: 1=Wildcard, 2=Divisional, 3=Conference, 4=SuperBowl
+      // Fetch all playoff weeks: 1=Wildcard, 2=Divisional, 3=Conference, 5=SuperBowl (not 4!)
+      // Also fetch main scoreboard which may have future games
       const urls = [
+        'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
         'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=3&week=1',
         'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=3&week=2',
         'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=3&week=3',
-        'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=3&week=4'
+        'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=3&week=4',
+        'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=3&week=5'
       ]
       
       const allEvents: any[] = []
@@ -252,10 +259,10 @@ export default function NFLPickem() {
         let round: 'conference' | 'superbowl' | null = null
         
         // Week 3 of playoffs = Conference Championships
-        // Week 4 of playoffs = Super Bowl
+        // Week 5 of playoffs = Super Bowl (not week 4!)
         if (week === 3 || eventName.includes('conference') || eventName.includes('championship')) {
           round = 'conference'
-        } else if (week === 4 || eventName.includes('super bowl')) {
+        } else if (week === 5 || eventName.includes('super bowl')) {
           round = 'superbowl'
         }
         
@@ -681,6 +688,9 @@ export default function NFLPickem() {
           <button onClick={() => setActiveTab('superbowl')} className={`btn ${activeTab === 'superbowl' ? '' : 'btn-secondary'}`} style={{ flex: '1', minWidth: '120px' }}>
             🏆 Super Bowl
           </button>
+          <button onClick={() => setActiveTab('rules')} className={`btn ${activeTab === 'rules' ? '' : 'btn-secondary'}`} style={{ flex: '1', minWidth: '120px' }}>
+            📖 Rules
+          </button>
         </div>
 
         {/* Leaderboard Tab */}
@@ -856,7 +866,7 @@ export default function NFLPickem() {
                           
                           return (
                             <td key={game.id} className={`pick-cell ${hideFromOthers ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
-                              {hideFromOthers ? '🔒' : pick || '-'}
+                              {hideFromOthers ? (pick ? '✓' : '🔒') : pick || '-'}
                             </td>
                           )
                         })}
@@ -948,7 +958,7 @@ export default function NFLPickem() {
                             
                             return (
                               <td key={game.id} className={`pick-cell ${hideFromOthers ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
-                                {hideFromOthers ? '🔒' : pick || '-'}
+                                {hideFromOthers ? (pick ? '✓' : '🔒') : pick || '-'}
                               </td>
                             )
                           })}
@@ -1041,7 +1051,7 @@ export default function NFLPickem() {
                             
                             return (
                               <td key={game.id} className={`pick-cell ${hideFromOthers ? 'hidden' : isCorrect ? 'correct' : isIncorrect ? 'incorrect' : 'pending'}`}>
-                                {hideFromOthers ? '🔒' : pick || '-'}
+                                {hideFromOthers ? (pick ? '✓' : '🔒') : pick || '-'}
                               </td>
                             )
                           })}
@@ -1053,6 +1063,45 @@ export default function NFLPickem() {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Rules Tab */}
+        {activeTab === 'rules' && (
+          <div className="card">
+            <div className="card-header">
+              <h3>📖 How It Works</h3>
+            </div>
+            <div style={{ padding: '2rem', lineHeight: '1.8' }}>
+              <h4 style={{ color: 'var(--accent-gold)', marginBottom: '1rem' }}>Scoring System</h4>
+              <p style={{ marginBottom: '1rem' }}>Pick the winner of each playoff game. Points = <strong>Base Points + Winner's Seed</strong></p>
+              
+              <div style={{ display: 'grid', gap: '1rem', marginTop: '1.5rem', marginBottom: '2rem' }}>
+                <div style={{ background: 'var(--bg-card-alt)', padding: '1rem', borderRadius: '8px' }}>
+                  <strong style={{ color: 'var(--accent-gold)' }}>Wild Card:</strong> 1 point + seed (e.g., 7-seed = 8 pts)
+                </div>
+                <div style={{ background: 'var(--bg-card-alt)', padding: '1rem', borderRadius: '8px' }}>
+                  <strong style={{ color: 'var(--accent-gold)' }}>Divisional:</strong> 2 points + seed (e.g., 6-seed = 8 pts)
+                </div>
+                <div style={{ background: 'var(--bg-card-alt)', padding: '1rem', borderRadius: '8px' }}>
+                  <strong style={{ color: 'var(--accent-gold)' }}>Conference:</strong> 4 points + seed (e.g., 1-seed = 5 pts)
+                </div>
+                <div style={{ background: 'var(--bg-card-alt)', padding: '1rem', borderRadius: '8px' }}>
+                  <strong style={{ color: 'var(--accent-gold)' }}>Super Bowl:</strong> 8 points + seed (e.g., 1-seed = 9 pts)
+                </div>
+              </div>
+
+              <h4 style={{ color: 'var(--accent-gold)', marginBottom: '1rem', marginTop: '2rem' }}>Rules</h4>
+              <ul style={{ listStyle: 'none', paddingLeft: '0' }}>
+                <li style={{ marginBottom: '0.5rem' }}>✓ Picks lock at kickoff</li>
+                <li style={{ marginBottom: '0.5rem' }}>✓ Your picks are hidden from other players until kickoff</li>
+                <li style={{ marginBottom: '0.5rem' }}>✓ Admin can edit any pick at any time</li>
+                <li style={{ marginBottom: '0.5rem' }}>✓ Scores update automatically from ESPN</li>
+              </ul>
+
+              <h4 style={{ color: 'var(--accent-gold)', marginBottom: '1rem', marginTop: '2rem' }}>Strategy Tips</h4>
+              <p>Picking underdogs (higher seeds) gives more points if they win. A 7-seed upset in Wild Card = 8 points, while a 2-seed favorite = 3 points!</p>
+            </div>
           </div>
         )}
 
